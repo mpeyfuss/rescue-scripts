@@ -11,4 +11,5 @@ These scripts use private bundled transactions through Flashbots to ensure that 
 2. Make sure you have [uv](https://docs.astral.sh/uv/) installed
 3. Make sure you have [Foundry](https://getfoundry.sh/) installed
 4. Create a config file (see `examples` for layout)
-5. Run `make rescue`
+5. Run `uv sync`
+6. Run `make rescue`
