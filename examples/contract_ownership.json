@@ -1,0 +1,18 @@
+[
+    {
+        "address": "0xEF561A49Cc31938661D02b5357088c2b153E486e",
+        "function_signature": "transferOwnership(address)",
+        "args": [
+            "0x74A7b842FDeb244C152aa5BC8B7fbae362091EE1"
+        ],
+        "gas_estimate": 40000
+    },
+    {
+        "address": "0xF1D3624780EC22208C84A43FB3457eba32123EC6",
+        "function_signature": "transferOwnership(address)",
+        "args": [
+            "0x74A7b842FDeb244C152aa5BC8B7fbae362091EE1"
+        ],
+        "gas_estimate": 40000
+    }
+]

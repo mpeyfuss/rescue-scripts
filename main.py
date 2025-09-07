@@ -1,13 +1,12 @@
-from src import ownable_rescue
+from src.rescue import rescue
 
-choice = input("""Scripts available:
-          
-    1: Ownable Contract Rescue
-               
-Choose a script: """)
+# Get input config file
+config_fp = input("Please input the path to the config file: ")
 
-match choice:
-    case "1":
-        ownable_rescue.rescue()
-    case _:
-        print("❌ Invalid Choice")
+# Get extra priority fee
+extra_priority_fee = float(
+    input("Please input any extra priority fee you want to add (gwei): ")
+)
+
+# Rescue
+rescue(config_fp, extra_priority_fee)

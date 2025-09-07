@@ -1,0 +1,14 @@
+[
+    {
+        "address": "0xF1AB05dC0829903c65690dc8e936B02888e7E52E",
+        "function_signature": "safeTransferFrom(address,address,uint256,uint256,bytes)",
+        "args": [
+            "0xd068c6A6db349A8Ce9C7aD3706391e53417abF61",
+            "0x74A7b842FDeb244C152aa5BC8B7fbae362091EE1",
+            0,
+            1,
+            "0x"
+        ],
+        "gas_estimate": 85000
+    }
+]

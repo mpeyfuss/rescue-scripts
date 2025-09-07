@@ -1,0 +1,12 @@
+[
+    {
+        "address": "0x5509102d66eEC09A994f978c80535572890f1Fef",
+        "function_signature": "transferFrom(address,address,uint256)",
+        "args": [
+            "0xd068c6A6db349A8Ce9C7aD3706391e53417abF61",
+            "0x74A7b842FDeb244C152aa5BC8B7fbae362091EE1",
+            78
+        ],
+        "gas_estimate": 140000
+    }
+]
