@@ -9,3 +9,8 @@ dependencies = [
     "python-dotenv>=1.1.1",
     "web3==6.20.2",
 ]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.12.12",
+]
