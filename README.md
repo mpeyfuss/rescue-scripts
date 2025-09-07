@@ -8,6 +8,7 @@ These scripts use private bundled transactions through Flashbots to ensure that 
 
 ## Getting Started
 1. Create your .env file
-2. Make sure you have [Foundry](https://getfoundry.sh/) installed
-3. Create a config file (see `examples` for layout)
-4. Run `make rescue`
+2. Make sure you have [uv](https://docs.astral.sh/uv/) installed
+3. Make sure you have [Foundry](https://getfoundry.sh/) installed
+4. Create a config file (see `examples` for layout)
+5. Run `make rescue`
