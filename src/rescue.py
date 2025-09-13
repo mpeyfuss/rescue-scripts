@@ -1,5 +1,6 @@
 import os
 import json
+from getpass import getpass
 from dotenv import load_dotenv
 from eth_account.account import Account
 from eth_account.signers.local import LocalAccount
@@ -14,10 +15,30 @@ load_dotenv()
 
 
 def rescue(config_fp: str, extra_priority_fee: int):
+    # get auth account keystore password
+    auth_account_pw = getpass("Enter auth account keystore password: ")
+
+    # get auth keystore json
+    with open(os.environ.get("AUTH_ACCOUNT_KEYSTORE_FILE"), "r") as auth_keystore:
+        auth_account_json = json.load(auth_keystore)
+
+    # get the auth account pk
+    auth_account_pk = Account.decrypt(auth_account_json, auth_account_pw)
+
+    # get gas account keystore password
+    gas_account_pw = getpass("Enter gas account keystore password: ")
+
+    # get gas keystore json
+    with open(os.environ.get("GAS_ACCOUNT_KEYSTORE_FILE"), "r") as gas_keystore:
+        gas_account_json = json.load(gas_keystore)
+
+    # get the gas account pk
+    gas_account_pk = Account.decrypt(gas_account_json, gas_account_pw)
+
     # setup
     victim_account: LocalAccount = Account.from_key(os.environ.get("VICTIM_ACCOUNT_PK"))
-    gas_account: LocalAccount = Account.from_key(os.environ.get("GAS_ACCOUNT_PK"))
-    auth_account: LocalAccount = Account.from_key(os.environ.get("AUTH_ACCOUNT_PK"))
+    gas_account: LocalAccount = Account.from_key(gas_account_pk)
+    auth_account: LocalAccount = Account.from_key(auth_account_pk)
     w3: FlashbotsWeb3 = Web3(HTTPProvider("https://ethereum-rpc.publicnode.com"))
     flashbot(w3, auth_account, os.environ.get("RELAY_URL"))
 
