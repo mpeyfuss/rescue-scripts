@@ -8,8 +8,10 @@ wheels/
 *_cache/
 
 # Foundry files
-tests/integration/contracts/cache/
-tests/integration/contracts/out/
+cache/
+out/
+dependencies/
+broadcast/
 
 # Virtual environments
 .venv

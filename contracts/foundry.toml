@@ -1,0 +1,19 @@
+[profile.default]
+src = 'src'
+test = 'test'
+out = 'out'
+libs = ["dependencies"]
+auto_detect_solc = true
+optimizer = true
+optimizer_runs = 6900
+verbosity = 3
+show_progress = true
+
+[fuzz]
+runs = 1024
+
+[dependencies]
+forge-std = "1.16.2"
+solady = "0.1.26"
+
+# See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
