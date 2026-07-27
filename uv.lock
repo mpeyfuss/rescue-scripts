@@ -3,7 +3,7 @@ revision = 3
 requires-python = ">=3.13"
 
 [options]
-exclude-newer = "2026-07-04T04:50:43.400841Z"
+exclude-newer = "2026-07-09T04:06:51.522005Z"
 exclude-newer-span = "P7D"
 
 [[package]]
@@ -285,7 +285,7 @@ wheels = [
 
 [[package]]
 name = "eth-rescue"
-version = "0.1.0"
+version = "0.1.1"
 source = { editable = "." }
 dependencies = [
     { name = "eth-abi" },

@@ -6,7 +6,12 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
-from eth_rescue.types import PreparedAction, RescueData, SimulationResult
+from eth_rescue.types import (
+    ActionOutcome,
+    PreparedAction,
+    RescueData,
+    SimulationResult,
+)
 
 console = Console()
 
@@ -125,6 +130,36 @@ def render_simulation_result(result: SimulationResult) -> None:
         f"Bundle hash: {result.get('bundleHash', '')}",
     )
     console.print(table)
+
+
+def render_outcome_report(
+    actions: list[RescueData], outcomes: list[ActionOutcome]
+) -> None:
+    styles = {
+        "rescued": "[green]rescued[/green]",
+        "failed": "[red]failed[/red]",
+        "unverified": "[yellow]unverified[/yellow]",
+    }
+    table = Table(title="Rescue outcome", box=box.ASCII, show_lines=True)
+    table.add_column("#", justify="right", style="bold")
+    table.add_column("Action", overflow="fold")
+    table.add_column("Result")
+
+    for outcome in outcomes:
+        action = actions[outcome.index]
+        desc = action.get("description") or action["function_signature"]
+        table.add_row(
+            str(outcome.index + 1), desc, styles.get(outcome.status, outcome.status)
+        )
+
+    console.print()
+    console.print(table)
+    if any(o.status == "unverified" for o in outcomes):
+        warning(
+            "Unverified actions could not be checked automatically; confirm them "
+            "manually. They are not retried in the legacy fallback."
+        )
+    console.print()
 
 
 def render_accounts(victim_address: str, gas_address: str) -> None:

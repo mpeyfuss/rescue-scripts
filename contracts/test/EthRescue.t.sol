@@ -184,10 +184,10 @@ contract EthRescueTest is Test {
     }
 
     function testSupportsTokenReceiverInterfaces() public view {
-        assertTrue(delegated.supportsInterface(0x01ffc9a7));
-        assertTrue(delegated.supportsInterface(0x150b7a02));
-        assertTrue(delegated.supportsInterface(0x4e2312e0));
-        assertFalse(delegated.supportsInterface(0xffffffff));
+        assertTrue(delegated.supportsInterface(0x01ffc9a7)); // ERC165
+        assertTrue(delegated.supportsInterface(0x150b7a02)); // ERC721Receiver
+        assertTrue(delegated.supportsInterface(0x4e2312e0)); // ERC1155Receiver
+        assertFalse(delegated.supportsInterface(0xffffffff)); 
     }
 
     function testDelegatedVictimReceivesSafeTransferredTokens() public {

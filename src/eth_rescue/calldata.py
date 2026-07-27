@@ -1,6 +1,10 @@
+"""
+Functions for string to abi encoded hex
+"""
+
 from typing import Any
 
-from eth_abi import encode, is_encodable_type
+from eth_abi import encode as abi_encode, is_encodable_type
 from eth_abi.grammar import parse
 from eth_utils import function_signature_to_4byte_selector
 
@@ -35,5 +39,5 @@ def build_calldata(function_signature: str, args: list[Any]) -> str:
         raise ValueError(
             f"{function_signature} expects {len(types)} args, got {len(args)}"
         )
-    encoded = encode(types, args)
+    encoded = abi_encode(types, args)
     return "0x" + (selector + encoded).hex()

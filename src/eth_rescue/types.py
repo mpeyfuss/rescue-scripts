@@ -8,6 +8,8 @@ class RescueData(TypedDict):
     address: str
     function_signature: str
     args: list[Any]
+    # Fixed gas limit for the action (kept as "gas_estimate" for config
+    # compatibility); never estimated via RPC.
     gas_estimate: NotRequired[int]
     description: NotRequired[str]
 
@@ -21,10 +23,10 @@ class Network(TypedDict):
 
 
 class PreparedAction(TypedDict):
-    """A rescue action with encoded calldata and an estimated gas limit."""
+    """A rescue action with encoded calldata and a fixed gas limit."""
 
-    to: str
-    data: str
+    to: str  # ethereum address
+    data: str  # 0x prepended hex string
     gas: int
 
 
@@ -54,7 +56,9 @@ class SendBundleResult(TypedDict):
     bundleHash: str
 
 
-TransactionRole = Literal["undelegate", "fund", "rescue", "sweep"]
+TransactionRole = Literal[
+    "deploy", "rescue-7702", "undelegate", "fund", "rescue", "sweep"
+]
 
 
 @dataclass(frozen=True)
@@ -77,6 +81,7 @@ class PreparedBundle:
     victim_funding: int
     sweep_value: int
     expected_residual: int
+    rescue_contract: str | None = None
 
     @property
     def entries(self) -> list[BundleEntry]:
@@ -84,6 +89,12 @@ class PreparedBundle:
             {"signed_transaction": transaction.signed_transaction}
             for transaction in self.transactions
         ]
+
+
+@dataclass(frozen=True)
+class ActionOutcome:
+    index: int
+    status: Literal["rescued", "failed", "unverified"]
 
 
 @dataclass(frozen=True)

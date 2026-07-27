@@ -1,11 +1,11 @@
 from eth_rescue.types import RescueData
 
-# Fallback gas estimates per action type (used when on-chain estimation fails).
-GAS_ERC20 = 70000
-GAS_ERC721 = 140000
+# Fixed gas limits per action type, generously given
+GAS_ERC20 = 75000
+GAS_ERC721 = 150000
 GAS_ERC1155 = 85000
 GAS_OWNERSHIP = 40000
-GAS_TRANSIENT_DELIST = 120000
+GAS_TRANSIENT_DELIST = 200000
 GAS_GENERIC = 150000
 
 

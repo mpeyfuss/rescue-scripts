@@ -39,10 +39,10 @@ contract FixtureERC721 {
 }
 
 contract FixtureERC1155 {
-    mapping(uint256 => mapping(address => uint256)) public balanceOf;
+    mapping(address => mapping(uint256 => uint256)) public balanceOf;
 
     function mint(address to, uint256 tokenId, uint256 amount) external {
-        balanceOf[tokenId][to] += amount;
+        balanceOf[to][tokenId] += amount;
     }
 
     function safeTransferFrom(
@@ -53,9 +53,41 @@ contract FixtureERC1155 {
         bytes calldata
     ) external {
         require(msg.sender == from, "not owner");
-        require(balanceOf[tokenId][from] >= amount, "insufficient balance");
-        balanceOf[tokenId][from] -= amount;
-        balanceOf[tokenId][to] += amount;
+        require(balanceOf[from][tokenId] >= amount, "insufficient balance");
+        balanceOf[from][tokenId] -= amount;
+        balanceOf[to][tokenId] += amount;
+    }
+}
+
+// Rejects senders that carry code, so it fails under an EIP-7702 delegation and
+// only succeeds via a direct victim transaction (the legacy fallback).
+contract FixtureCodeRejectingERC20 {
+    mapping(address => uint256) public balanceOf;
+
+    function mint(address to, uint256 amount) external {
+        balanceOf[to] += amount;
+    }
+
+    function transfer(address to, uint256 amount) external returns (bool) {
+        require(msg.sender.code.length == 0, "no contracts");
+        require(balanceOf[msg.sender] >= amount, "insufficient balance");
+        balanceOf[msg.sender] -= amount;
+        balanceOf[to] += amount;
+        return true;
+    }
+}
+
+// Returns false instead of reverting, so the low-level call "succeeds" while no
+// tokens move. Proves outcome detection relies on state, not call success.
+contract FixtureFalseReturningERC20 {
+    mapping(address => uint256) public balanceOf;
+
+    function mint(address to, uint256 amount) external {
+        balanceOf[to] += amount;
+    }
+
+    function transfer(address, uint256) external pure returns (bool) {
+        return false;
     }
 }
 

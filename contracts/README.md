@@ -1,4 +1,6 @@
-# EthRescue Security Notes
+# Eth Rescue Contracts
+
+*A stateless rescue contract used as an EIP-7702 delegation for rescue operations.*
 
 ## Trust Model
 
@@ -11,9 +13,7 @@
 - The client supplies enough outer gas for all action stipends and contract
   overhead. Insufficient outer gas reverts the transaction.
 
-## Static Analysis Triage
-
-Slither reports the following intentional patterns:
+## Intentional Patterns
 
 - **Arbitrary ETH destination:** `_sweepEth` calls the constructor-bound,
   validated `SAFE`; no function accepts a replacement destination.
@@ -26,3 +26,8 @@ Slither reports the following intentional patterns:
   flag. `LibCall.tryCall` copies zero return bytes to bound hostile return data.
 - **Compiler and naming warnings:** Solidity is pinned by the Foundry project;
   uppercase immutable names are intentional configuration constants.
+
+## Verified Deployments
+
+Ethereum: `0x3Dd2ed7957cc9395547193257A667E12D4813ab4`
+Sepolia: `0xC87177679Ee687EA504554f7FFADE4CA9e4EC90B`

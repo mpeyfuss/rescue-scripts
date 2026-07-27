@@ -199,6 +199,32 @@ def sequential_relay(anvil_w3: Web3) -> SequentialRelay:
 
 
 @pytest.fixture
+def code_rejecting_erc20(anvil_w3: Web3, rescue_accounts):
+    victim, _gas, _safe = rescue_accounts
+    token = _deploy(anvil_w3, "FixtureCodeRejectingERC20")
+    receipt = anvil_w3.eth.wait_for_transaction_receipt(
+        token.functions.mint(victim.address, 500).transact(
+            {"from": anvil_w3.eth.accounts[0]}
+        )
+    )
+    assert receipt["status"] == 1
+    return token
+
+
+@pytest.fixture
+def false_returning_erc20(anvil_w3: Web3, rescue_accounts):
+    victim, _gas, _safe = rescue_accounts
+    token = _deploy(anvil_w3, "FixtureFalseReturningERC20")
+    receipt = anvil_w3.eth.wait_for_transaction_receipt(
+        token.functions.mint(victim.address, 500).transact(
+            {"from": anvil_w3.eth.accounts[0]}
+        )
+    )
+    assert receipt["status"] == 1
+    return token
+
+
+@pytest.fixture
 def asset_contracts(anvil_w3: Web3, rescue_accounts):
     victim, _gas, _safe = rescue_accounts
     contracts = {

@@ -111,25 +111,40 @@ def test_compute_fees_rejects_negative_extra_priority_fee():
         rescue._compute_fees(SimpleNamespace(), -0.01)
 
 
-def test_estimate_gas_uses_buffered_rpc_estimate():
-    w3 = SimpleNamespace(eth=SimpleNamespace(estimate_gas=lambda transaction: 40_000))
+def test_prepare_actions_uses_fixed_gas_without_rpc():
+    rescue_data = [
+        {
+            "address": "0x000000000000000000000000000000000000dEaD",
+            "function_signature": "transfer(address,uint256)",
+            "args": ["0x000000000000000000000000000000000000BEEF", 5],
+            "gas_estimate": 70_000,
+        },
+        {
+            "address": "0x000000000000000000000000000000000000dEaD",
+            "function_signature": "transfer(address,uint256)",
+            "args": ["0x000000000000000000000000000000000000BEEF", 5],
+        },
+    ]
 
-    assert rescue._estimate_gas(w3, "victim", "target", "0x1234", 99_000) == 50_000
+    prepared = rescue.prepare_actions(rescue_data)
+
+    assert [action["gas"] for action in prepared] == [70_000, rescue.GAS_GENERIC]
 
 
-def test_estimate_gas_uses_fallback_and_warns_on_rpc_failure(monkeypatch):
-    warnings = []
+def test_deploy_tx_gas_buffers_estimate():
+    w3 = SimpleNamespace(eth=SimpleNamespace(estimate_gas=lambda transaction: 500_000))
 
+    assert rescue._deploy_tx_gas(w3, b"\x60\x00") == 550_000
+
+
+def test_deploy_tx_gas_falls_back_on_rpc_failure(monkeypatch):
     def fail(transaction):
-        raise RuntimeError("execution reverted")
+        raise RuntimeError("no estimate")
 
     w3 = SimpleNamespace(eth=SimpleNamespace(estimate_gas=fail))
-    monkeypatch.setattr(rescue.ui, "warning", warnings.append)
+    monkeypatch.setattr(rescue.ui, "warning", lambda message: None)
 
-    assert rescue._estimate_gas(w3, "victim", "target", "0x1234", 99_000) == 99_000
-    assert warnings == [
-        "Could not estimate gas for target (execution reverted); using fallback 99000"
-    ]
+    assert rescue._deploy_tx_gas(w3, b"\x60\x00") == rescue.DEPLOY_TX_GAS_FALLBACK
 
 
 def test_required_funding_accounts_for_optional_undelegation():
@@ -290,6 +305,108 @@ def test_prepare_bundle_targets_configured_block_offset(monkeypatch):
     )
 
     assert bundle.target_block == 100 + rescue.TARGET_BLOCK_OFFSET
+
+
+def _action(gas=70_000):
+    return {
+        "to": "0x000000000000000000000000000000000000dEaD",
+        "data": "0xdeadbeef",
+        "gas": gas,
+    }
+
+
+def _patch_7702(monkeypatch, deploy_gas=800_000):
+    monkeypatch.setattr(rescue, "_compute_fees", lambda w3, fee: (1, 20))
+    monkeypatch.setattr(rescue, "_max_next_block_effective_fee", lambda w3, fee: 10)
+    monkeypatch.setattr(rescue, "_deploy_tx_gas", lambda w3, data: deploy_gas)
+
+
+def test_prepare_7702_bundle_pure_shape_and_nonces(monkeypatch):
+    victim = Account.create()
+    gas = Account.create()
+    _patch_7702(monkeypatch)
+    eth = SimpleNamespace(
+        block_number=100,
+        chain_id=1,
+        get_transaction_count=lambda address: 7 if address == victim.address else 3,
+    )
+    w3 = SimpleNamespace(eth=eth)
+
+    bundle = rescue.prepare_7702_bundle(
+        w3, victim, gas, [_action()], "0x" + "22" * 20, 0.0
+    )
+
+    assert [t.role for t in bundle.transactions] == ["deploy", "rescue-7702"]
+    assert bundle.victim_nonce == 7
+    assert bundle.gas_nonce == 3
+    assert bundle.rescue_contract == rescue.compute_create_address(gas.address, 3)
+    assert bundle.sweep_value == 0
+    assert bundle.victim_funding == 0
+
+    deploy_tx = TypedTransaction.from_bytes(
+        HexBytes(bundle.transactions[0].signed_transaction)
+    ).as_dict()
+    rescue_tx = TypedTransaction.from_bytes(
+        HexBytes(bundle.transactions[1].signed_transaction)
+    ).as_dict()
+    assert deploy_tx["nonce"] == 3
+    assert deploy_tx["to"] in (None, b"", HexBytes("0x"))
+    assert rescue_tx["nonce"] == 4
+    assert rescue_tx["to"] == HexBytes(victim.address)
+    authorization = rescue_tx["authorizationList"][0]
+    assert authorization["nonce"] == 7
+    assert authorization["address"] == HexBytes(bundle.rescue_contract)
+    assert (
+        Account.recover_transaction(bundle.transactions[1].signed_transaction)
+        == gas.address
+    )
+
+
+def test_prepare_7702_bundle_chunks_actions_at_limit(monkeypatch):
+    victim = Account.create()
+    gas = Account.create()
+    _patch_7702(monkeypatch)
+    eth = SimpleNamespace(
+        block_number=100,
+        chain_id=1,
+        get_transaction_count=lambda address: 7 if address == victim.address else 3,
+    )
+    w3 = SimpleNamespace(eth=eth)
+    actions = [_action() for _ in range(rescue.MAX_ACTIONS_PER_RESCUE + 1)]
+
+    bundle = rescue.prepare_7702_bundle(w3, victim, gas, actions, "0x" + "22" * 20, 0.0)
+
+    assert [t.role for t in bundle.transactions] == [
+        "deploy",
+        "rescue-7702",
+        "rescue-7702",
+    ]
+    nonces = [
+        TypedTransaction.from_bytes(HexBytes(t.signed_transaction)).as_dict()["nonce"]
+        for t in bundle.transactions
+    ]
+    assert nonces == [3, 4, 5]
+    # only the first rescue tx carries the authorization
+    first = TypedTransaction.from_bytes(
+        HexBytes(bundle.transactions[1].signed_transaction)
+    ).as_dict()
+    second = TypedTransaction.from_bytes(
+        HexBytes(bundle.transactions[2].signed_transaction)
+    ).as_dict()
+    assert "authorizationList" in first
+    assert "authorizationList" not in second
+
+
+def test_required_funding_7702_covers_deploy_and_batches():
+    prepared = [_action(70_000), _action(50_000)]
+    deploy_gas = 800_000
+    max_fee = 20
+
+    required = rescue._required_funding_7702(deploy_gas, prepared, max_fee)
+
+    batch_gas = rescue.RESCUE_TX_OVERHEAD + 120_000
+    expected = int((deploy_gas + batch_gas) * max_fee * rescue.FUNDING_BUFFER)
+    assert required == expected
 
 
 def test_has_7702_delegation_recognizes_only_delegation_designator():

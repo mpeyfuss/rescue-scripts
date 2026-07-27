@@ -2,21 +2,15 @@
 pragma solidity 0.8.31;
 
 import {LibCall} from "solady-0.1.26/utils/LibCall.sol";
+import {IERC165} from "@openzeppelin-contracts-5.6.1/utils/introspection/IERC165.sol";
+import {IERC721Receiver} from "@openzeppelin-contracts-5.6.1/token/ERC721/IERC721Receiver.sol";
+import {IERC1155Receiver} from "@openzeppelin-contracts-5.6.1/token/ERC1155/IERC1155Receiver.sol";
 
 /// @title EthRescue
 /// @notice Stateless rescue contract used as an EIP-7702 delegation for rescue operations.
 /// @dev Uses immutables instead of storage to avoid conflicting with delegated account storage.
 /// @author mpeyfuss
-contract EthRescue {
-    /////////////////////////////////////////////////////////////////////
-    // CONSTANTS
-    /////////////////////////////////////////////////////////////////////
-
-    bytes4 private constant _ERC165_INTERFACE_ID = 0x01ffc9a7;
-    bytes4 private constant _ERC721_RECEIVER_INTERFACE_ID = 0x150b7a02;
-    bytes4 private constant _ERC1155_RECEIVER_INTERFACE_ID = 0x4e2312e0;
-    bytes4 private constant _ERC1155_RECEIVED = 0xf23a6e61;
-    bytes4 private constant _ERC1155_BATCH_RECEIVED = 0xbc197c81;
+contract EthRescue is IERC165, IERC721Receiver, IERC1155Receiver {
 
     /////////////////////////////////////////////////////////////////////
     // TYPES
@@ -66,16 +60,16 @@ contract EthRescue {
     receive() external payable {}
 
     function supportsInterface(bytes4 interfaceId) external pure returns (bool) {
-        return interfaceId == _ERC165_INTERFACE_ID || interfaceId == _ERC721_RECEIVER_INTERFACE_ID
-            || interfaceId == _ERC1155_RECEIVER_INTERFACE_ID;
+        return interfaceId == type(IERC165).interfaceId || interfaceId == type(IERC721Receiver).interfaceId
+            || interfaceId == type(IERC1155Receiver).interfaceId;
     }
 
     function onERC721Received(address, address, uint256, bytes calldata) external pure returns (bytes4) {
-        return _ERC721_RECEIVER_INTERFACE_ID;
+        return IERC721Receiver.onERC721Received.selector;
     }
 
     function onERC1155Received(address, address, uint256, uint256, bytes calldata) external pure returns (bytes4) {
-        return _ERC1155_RECEIVED;
+        return IERC1155Receiver.onERC1155Received.selector;
     }
 
     function onERC1155BatchReceived(address, address, uint256[] calldata, uint256[] calldata, bytes calldata)
@@ -83,7 +77,7 @@ contract EthRescue {
         pure
         returns (bytes4)
     {
-        return _ERC1155_BATCH_RECEIVED;
+        return IERC1155Receiver.onERC1155BatchReceived.selector;
     }
 
     function rescue(Action[] calldata actions) external {

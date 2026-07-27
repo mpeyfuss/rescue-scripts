@@ -14,7 +14,7 @@ def _send_account_transaction(w3, account, transaction):
 
 
 def _execute_rescue(w3, victim, gas, safe, rescue_data):
-    prepared = rescue.prepare_actions(w3, victim.address, rescue_data)
+    prepared = rescue.prepare_actions(rescue_data)
     preview_bundle = rescue.prepare_bundle(w3, victim, gas, prepared, safe.address, 0.0)
     simulation = rescue.simulate_prepared_bundle(w3, preview_bundle)
     assert simulation.ok
@@ -84,7 +84,7 @@ def test_plain_victim_rescues_asset_matrix_and_sweeps_eth(
     ]
     assert erc20.functions.balanceOf(safe.address).call() == 1_000
     assert erc721.functions.ownerOf(1).call() == safe.address
-    assert erc1155.functions.balanceOf(7, safe.address).call() == 25
+    assert erc1155.functions.balanceOf(safe.address, 7).call() == 25
     assert ownable.functions.owner().call() == safe.address
     assert anvil_w3.eth.get_balance(safe.address) == bundle.sweep_value
     assert anvil_w3.eth.get_transaction_count(victim.address) == victim_nonce + 5
@@ -182,9 +182,7 @@ def test_reverting_action_rolls_back_simulation_and_blocks_submission(
     victim, gas, safe = rescue_accounts
     erc20 = asset_contracts["erc20"]
     prepared = rescue.prepare_actions(
-        anvil_w3,
-        victim.address,
-        [templates.erc20_transfer(erc20.address, safe.address, 1_001)],
+        [templates.erc20_transfer(erc20.address, safe.address, 1_001)]
     )
     bundle = rescue.prepare_bundle(anvil_w3, victim, gas, prepared, safe.address, 0.0)
     before = {

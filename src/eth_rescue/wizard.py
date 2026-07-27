@@ -50,7 +50,9 @@ def _validate_actions(data: object) -> list[RescueData]:
             or not isinstance(gas_estimate, int)
             or gas_estimate <= 0
         ):
-            raise ValueError(f"action #{i} 'gas_estimate' must be a positive integer")
+            raise ValueError(
+                f"action #{i} 'gas_estimate' (gas limit) must be a positive integer"
+            )
         action["address"] = to_checksum_address(action["address"])
         action["gas_estimate"] = gas_estimate
     return data
